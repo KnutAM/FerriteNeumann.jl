@@ -1,0 +1,13 @@
+name = "FerriteNeumann"
+uuid = "f0450e97-3c57-4e4a-8020-cfce828c3bbe"
+authors = ["Knut Andreas Meyer and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
