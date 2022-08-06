@@ -25,7 +25,7 @@ struct Neumann{FV,FUN}
     face_values::FV
     faces::Vector{Int}
     cells::Vector{Int}
-    f::FUN # f(fv::FaceValues, q_point::Int, i_shape::Int, x::Vec, t::Number)->Number
+    f::FUN # f(x::Vec, time, n::Vec)->{FV::FaceScalarValues ? Number : Vec}
 end
 
 function Neumann(field_name::Symbol, fv::FaceValues, faceset::Set{FaceIndex}, f, cellset=nothing)
