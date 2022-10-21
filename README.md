@@ -8,8 +8,11 @@
 Simplified application of Neumann boundary conditions for [Ferrite.jl](https://github.com/Ferrite-FEM/Ferrite.jl/), 
 where the Neumann BCs are of the type
 
-- Scalar field: $\int_{\Gamma} b \ \delta u \ \mathrm{d}\Gamma$
-- Vector field: $\int_{\Gamma} \boldsymbol{b} \cdot \boldsymbol{\delta u} \ \mathrm{d}\Gamma$
+- Scalar field: $\int_{\Gamma} f \ \delta u \ \mathrm{d}\Gamma$
+- Vector field: $\int_{\Gamma} \boldsymbol{f} \cdot \boldsymbol{\delta u} \ \mathrm{d}\Gamma$
+
+*Currently, only the `DofHandler` is supported, but please open an issue/PR if you need the*
+*`MixedDofHandler`. That should be quite easy, I just haven't needed it yet.*
 
 ## Example
 Let's consider the case of a coupled problem with one 
@@ -37,7 +40,7 @@ boundary value types, starting with the container, defining the faceset,
 the facevalues, and finally adding each condition
 
 ```julia
-nh = NeumannHandler(dh::AbstractDofHandler) # Container for Neumann BCs
+nh = NeumannHandler(dh::DofHandler)         # Container for Neumann BCs
 faceset = getfaceset(grid, "right")         # 
 qr = QuadratureRule{dim-1, RefCube}(2)      # 
 ip = Lagrange{dim, RefCube, 1}()            #
@@ -52,7 +55,7 @@ During the time stepping, the current forces can be added to the force vector wi
 ```julia
 apply!(f::Vector, nh, time)
 ```
-noting that the full force vector is added (not only the increment), so this statement 
+noting that the full force is added (not only the increment), so this statement 
 is usually prepended by `fill!(f, 0)`. However, this action can also be done before 
 the element assembly if it includes `f`, nothing that start_assemble has this effect
 if used on `f`. 

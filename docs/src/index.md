@@ -3,12 +3,11 @@ CurrentModule = FerriteNeumann
 ```
 
 # FerriteNeumann
+[FerriteNeumann.jl](https://github.com/KnutAM/FerriteNeumann.jl): 
+Simple Neumann boundary conditions for [Ferrite.jl](https://github.com/Ferrite-FEM/Ferrite.jl)
 
-Documentation for [FerriteNeumann](https://github.com/KnutAM/FerriteNeumann.jl).
 
-```@index
-```
-
-```@autodocs
-Modules = [FerriteNeumann]
+```@docs
+NeumannHandler
+Neumann
 ```

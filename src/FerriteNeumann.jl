@@ -6,7 +6,6 @@ include("iterators.jl")
 export FaceIterator 
 export faceid, faceindex
 
-# Includes the weak form ⇒ out of scope for Ferrite.jl
 include("neumann.jl")   
 export NeumannHandler, Neumann
 

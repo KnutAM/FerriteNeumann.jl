@@ -1,24 +1,29 @@
 """
     Neumann(field_name::Symbol, fv::FaceValues, faceset::Set{FaceIndex}, f, cellset=nothing)
 
-    Define a Neumann contribution according to 
-    ```math
-    \\int_{\\Gamma} b \\ \\delta u \\ \\mathrm{d}\\Gamma
+Define a Neumann contribution with the weak forms according to 
+```math
+\\int_{\\Gamma} f \\ \\delta u \\ \\mathrm{d}\\Gamma, \\quad \\text{Scalar fields} \\\\
 
-    \\int_{\\Gamma} \\boldsymbol{b} \\cdot \\boldsymbol{\\delta u} \\ \\mathrm{d}\\Gamma
-    ```
-    for scalar or vector fields, respectively. Here ``b`` or 
-    ``\\boldsymbol{b}`` is the prescribed Neumann value, 
-    defined by the function `f` with signature 
-    ``` 
-    f(x::Vec, time, n::Vec)
-    ```
-    where `x` is the spatial position of the current quadrature point, `time` is the 
-    current time, and `n` is the face normal vector. `field_name` describes the 
-    field on which the boundary condition should act, and `fv` describes the 
-    interpolation and integration rules. `faceset` describes which faces the BC is 
-    applied to, and if `cellset!=nothing`, only the cells in `faceset` that are also 
-    in `cellset` are included (important when using mixed grids with different cells)
+\\int_{\\Gamma} \\boldsymbol{f} \\cdot \\boldsymbol{\\delta u} \\ \\mathrm{d}\\Gamma,
+\\quad \\text{Vector fields} 
+```
+where ``\\Gamma`` is the boundary where the contribution is active. 
+``f``, or ``\\boldsymbol{f}``, is the prescribed Neumann value, 
+defined by a function with signatures
+
+`f(x::Vec, time, n::Vec) -> Number` (Scalar field)
+
+`f(x::Vec, time, n::Vec) -> Vec{dim}` (Vector field)
+
+where `x` is the spatial position of the current quadrature point, `time` is the 
+current time, and `n` is the face normal vector. 
+
+* `field_name` describes the field on which the boundary condition should abstract
+* `fv` describes the interpolation and integration rules. 
+* `faceset` describes which faces the BC is applied to
+* if `cellset!=nothing`, only the cells in `faceset` that are also in `cellset` are included 
+  (important when using mixed grids with different cells)
 """
 struct Neumann{FV,FUN}
     field_name::Symbol
@@ -38,6 +43,17 @@ struct NeumannHandler{DH<:AbstractDofHandler}
     dh::DH
 end
 
+"""
+    NeumannHandler(dh::AbstractDofHandler)    
+
+The handler of all the Neumann boundary conditions in `dh`.
+
+With `nh=NeumannHandler(dh)`, add boundary conditions 
+with `add!(nh, Neumann(...))`. 
+
+Apply the boundary conditions for a given `time` to the 
+external "force"-vector `fext` as `apply!(fext, nh, time)`
+"""
 NeumannHandler(dh::AbstractDofHandler) = NeumannHandler([], dh)
 
 function Ferrite.add!(nh::NeumannHandler, nbc)
