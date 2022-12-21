@@ -1,12 +1,9 @@
 module FerriteNeumann
 using Ferrite
 
-# Introduce FaceIterator, might be merged with Ferrite.jl
-include("iterators.jl") 
-export FaceIterator 
-export faceid, faceindex
+include("PR495.jl")     # FaceIterator
+include("neumann.jl")
 
-include("neumann.jl")   
 export NeumannHandler, Neumann
 
 end
