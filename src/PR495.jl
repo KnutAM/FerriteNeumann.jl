@@ -1,4 +1,5 @@
 # This file defines iterators used for looping over a grid
+# Note, most code taken from Ferrite.jl PR495 + additional code from Ferrite.jl to make it work. 
 # Not exported, for convenience:
 import Ferrite: UpdateFlags, AbstractGrid, AbstractDofHandler, ScalarWrapper
 import Ferrite: nnodes_per_cell, cellnodes!, cellcoords!
