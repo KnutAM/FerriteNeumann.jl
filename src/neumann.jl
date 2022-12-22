@@ -21,8 +21,9 @@ current time, and `n` is the face normal vector. The remaining input arguments a
 
 * `fieldname` describes the field on which the boundary condition should abstract
 * `fv_info` gives required input to determine the facevalues. The following input types are accepted:
-  - `FaceValues` matching the interpolation for `fieldname` for the faces in `faceset`
-  - `QuadratureRule` matching the interpolation for `fieldname` for faces in `faceset`
+  - `FaceValues` matching the interpolation for `fieldname` for the faces in `faceset` and output of `f`
+  - `QuadratureRule` matching the interpolation for `fieldname` for faces in `faceset` `FaceValues` are deduced 
+    from the output of `f`
   - `Int` giving the integration order to use. `FaceValues` are deduced from the interpolation 
     of `fieldname` and the output of `f`. 
 * `faceset` describes which faces the BC is applied to
@@ -42,12 +43,13 @@ struct NeumannData{FV,FUN}
     f::FUN
 end
 
-function NeumannData(dh::DofHandler, spec::Neumann)
-    dofrange = dof_range(dh, spec.fieldname)
-    Ferrite.get_func_interpolations(dh, spec.fieldname)
-    ip = Ferrite.getfieldinterpolation(dh, Ferrite.find_field(dh, spec.fieldname))
+NeumannData(dh::DofHandler, spec::Neumann) = NeumannData(dh, spec, spec.faceset)
+
+function NeumannData(dh_fh::Union{DofHandler,FieldHandler}, spec::Neumann, faceset::Set{FaceIndex})
+    dofrange = dof_range(dh_fh, spec.fieldname)
+    ip = Ferrite.getfieldinterpolation(dh_fh, Ferrite.find_field(dh_fh, spec.fieldname))
     fv = get_facevalues(spec.fv_info, ip, spec.f)
-    return NeumannData(spec.fieldname, dofrange, fv, spec.faceset, spec.f)
+    return NeumannData(spec.fieldname, dofrange, fv, faceset, spec.f)
 end
 
 # If a facevalue has already been given, use this value 
@@ -100,9 +102,15 @@ function Ferrite.add!(nh::NeumannHandler{<:DofHandler}, nbc::Neumann)
 end
 
 function Ferrite.add!(nh::NeumannHandler{<:MixedDofHandler}, nbc::Neumann)
+    contribution = false
     for fh in nh.dh.fieldhandlers
-        push!(nh.nbcs, NeumannData(nh.dh, fh, nbc))
+        faceset = intersect_with_cellset(nbc.faceset, fh.cellset)
+        if length(faceset)>0
+            contribution = true
+            push!(nh.nbcs, NeumannData(fh, nbc, faceset))
+        end
     end
+    contribution || @warn "No contributions added to the NeumannHandler"
 end
 
 function Ferrite.apply!(f::Vector, nh::NeumannHandler, time)
@@ -131,4 +139,8 @@ function calculate_neumann_contribution!(fe::Vector, face::FaceCache, fv::FaceVa
             fe[i] += (δu ⋅ b) * dΓ
         end
     end
+end
+
+function intersect_with_cellset(faceset::Set{FaceIndex}, cellset)
+    return Set(face for face in faceset if first(face) in cellset)
 end
