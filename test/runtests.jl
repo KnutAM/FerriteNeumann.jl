@@ -48,6 +48,13 @@ end
         f = zeros(ndofs(dh))
         apply!(f, nh, 1.0)
 
+        # Test deduction of facevalues from just quadrature order
+        f2 = zeros(ndofs(dh))
+        nh2 = NeumannHandler(dh)
+        add!(nh2, Neumann(:u, 2, getfaceset(grid, "right"), f_2d))
+        apply!(f2, nh2, 1.0)
+        @test f2 ≈ f
+
         # Use the ConstraintHandler to give fixed values on each dof
         # Note half load on node at the end of the edge
         a = zeros(ndofs(dh))
@@ -80,16 +87,27 @@ end
         f_3d(_,t,n) = t*(x_scale*n + y_scale*ny + z_scale*nz)
         add!(nh, Neumann(:u, fv, fset, f_3d))
         p_scale = rand()
-        add!(nh, Neumann(:p, fv_s, fset, (args...)->p_scale))
+        f_1d(args...) = p_scale
+        add!(nh, Neumann(:p, fv_s, fset, f_1d))
+
+        # Create same conditions but deduce facevalue based on quadrature order and function
+        nh_auto = NeumannHandler(dh)
+        add!(nh_auto, Neumann(:u, 2, fset, f_3d))
+        add!(nh_auto, Neumann(:p, 2, fset, f_1d))
         
         # Test applying the Neumann bc
         area = 2*2
         f = zeros(ndofs(dh))
+        f_auto = copy(f)
         apply!(f, nh, 0.0)  # Only :p field gets values
+        apply!(f_auto, nh_auto, 0.0)
         @test sum(f) ≈ p_scale*area
-        fill!(f, 0)         # Reset (equivalent to start_assemble)
-        apply!(f, nh, 1.0)  # Both :u and :p fields get values
-    
+        @test f ≈ f_auto
+        fill!.((f,f_auto), 0)   # Reset (equivalent to start_assemble)
+        apply!(f, nh, 1.0)      # Both :u and :p fields get values
+        apply!(f_auto, nh_auto, 1.0)
+        @test f ≈ f_auto
+        
         #= 
         Due to the triangle mesh, the result will not be evenly 
         distributed nodal forces. Therefore, we can only check 
