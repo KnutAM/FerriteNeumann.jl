@@ -35,6 +35,7 @@ struct Neumann{FVI,FUN}
     f::FUN # f(x::Vec, time, n::Vec)->{FV::FaceScalarValues ? Number : Vec}
 end
 
+# Internal
 struct NeumannData{FV,FUN}
     fieldname::Symbol   # Only for information 
     dofrange::UnitRange{Int}
@@ -43,12 +44,16 @@ struct NeumannData{FV,FUN}
     f::FUN
 end
 
-NeumannData(dh::DofHandler, spec::Neumann) = NeumannData(dh, spec, spec.faceset)
+function NeumannData(dh::DofHandler, spec::Neumann)
+    cell = getcells(dh.grid, first(first(spec.faceset)))
+    NeumannData(dh, spec, spec.faceset, cell)
+end
 
-function NeumannData(dh_fh::Union{DofHandler,FieldHandler}, spec::Neumann, faceset::Set{FaceIndex})
+function NeumannData(dh_fh::Union{DofHandler,FieldHandler}, spec::Neumann, faceset::Set{FaceIndex}, ::C) where C<:Ferrite.AbstractCell
     dofrange = dof_range(dh_fh, spec.fieldname)
     ip = Ferrite.getfieldinterpolation(dh_fh, Ferrite.find_field(dh_fh, spec.fieldname))
-    fv = get_facevalues(spec.fv_info, ip, spec.f)
+    ip_geo = Ferrite.default_interpolation(C)
+    fv = get_facevalues(spec.fv_info, ip, ip_geo, spec.f)
     return NeumannData(spec.fieldname, dofrange, fv, faceset, spec.f)
 end
 
@@ -56,25 +61,24 @@ end
 get_facevalues(fv::FaceValues, args...) = fv
 
 # Create default quadrule of given order
-function get_facevalues(order::Int, ip::Interpolation{dim,RefShape}, f) where {dim, RefShape}
-    return get_facevalues(QuadratureRule{dim-1,RefShape}(order), ip, f)
+function get_facevalues(order::Int, ip::Interpolation{dim,RefShape}, ip_geo::Interpolation{dim,RefShape}, f) where {dim, RefShape}
+    return get_facevalues(QuadratureRule{dim-1,RefShape}(order), ip, ip_geo, f)
 end
 
 # Use the given function to determine if the output should be a scalar or vector. 
-get_facevalues(qr::QuadratureRule, ip::Interpolation{dim}, f) where dim = get_facevalues(qr, ip, f(zero(Vec{dim}), 0.0, zero(Vec{dim})))
-function get_facevalues(qr::QuadratureRule{<:Any,RefShape}, ip::Interpolation{<:Any,RefShape}, ::Vec) where RefShape
-    return FaceVectorValues(qr, ip)
+function get_facevalues(qr::QuadratureRule, ip::Interpolation{dim}, ip_geo, f) where dim
+    return get_facevalues(qr, ip, ip_geo, f(zero(Vec{dim}), 0.0, zero(Vec{dim})))
 end
-function get_facevalues(qr::QuadratureRule{<:Any,RefShape}, ip::Interpolation{<:Any,RefShape}, ::Number) where RefShape
-    return FaceScalarValues(qr, ip)
+function get_facevalues(qr::QuadratureRule{<:Any,RefShape}, ip::Interpolation{<:Any,RefShape}, 
+                        ip_geo::Interpolation{<:Any,RefShape}, ::Vec) where RefShape
+    return FaceVectorValues(qr, ip, ip_geo)
 end
-function get_facevalues(qr::QuadratureRule, ip::Interpolation, fval::Union{Vec,Number})
-    throw(ArgumentError("qr, $(typeof(qr)), and ip, $(typeof(ip)), doesn't seem compatible. (info: fval=$fval)"))
+function get_facevalues(qr::QuadratureRule{<:Any,RefShape}, ip::Interpolation{<:Any,RefShape}, 
+                        ip_geo::Interpolation{<:Any,RefShape}, ::Number) where RefShape
+    return FaceScalarValues(qr, ip, ip_geo)
 end
-
-struct NeumannHandler{DH<:AbstractDofHandler}
-    nbcs::Vector
-    dh::DH
+function get_facevalues(qr::QuadratureRule, ip::Interpolation, ip_geo::Interpolation, fval::Union{Vec,Number})
+    throw(ArgumentError("qr, $(typeof(qr)), ip, $(typeof(ip)), and ip_geo, $(typeof(ip_geo)), doesn't seem compatible. (info: fval=$fval)"))
 end
 
 """
@@ -95,6 +99,10 @@ for t in timesteps
 end
 ```
 """
+struct NeumannHandler{DH<:AbstractDofHandler}
+    nbcs::Vector
+    dh::DH
+end
 NeumannHandler(dh::AbstractDofHandler) = NeumannHandler([], dh)
 
 function Ferrite.add!(nh::NeumannHandler{<:DofHandler}, nbc::Neumann)
@@ -107,12 +115,19 @@ function Ferrite.add!(nh::NeumannHandler{<:MixedDofHandler}, nbc::Neumann)
         faceset = intersect_with_cellset(nbc.faceset, fh.cellset)
         if length(faceset)>0 && nbc.fieldname in Ferrite.getfieldnames(fh)
             contribution = true
-            push!(nh.nbcs, NeumannData(fh, nbc, faceset))
+            cell = getcells(nh.dh.grid, first(first(faceset)))
+            push!(nh.nbcs, NeumannData(fh, nbc, faceset, cell))
         end
     end
     contribution || @warn "No contributions added to the NeumannHandler"
 end
 
+function intersect_with_cellset(faceset::Set{FaceIndex}, cellset)
+    return Set(face for face in faceset if first(face) in cellset)
+end
+
+
+# Application of boundary conditions
 function Ferrite.apply!(f::Vector, nh::NeumannHandler, time)
     foreach(nbc->apply!(f,nbc,nh.dh,time), nh.nbcs)
 end
@@ -139,8 +154,4 @@ function calculate_neumann_contribution!(fe::Vector, face::FaceCache, fv::FaceVa
             fe[i] += (δu ⋅ b) * dΓ
         end
     end
-end
-
-function intersect_with_cellset(faceset::Set{FaceIndex}, cellset)
-    return Set(face for face in faceset if first(face) in cellset)
 end
