@@ -225,9 +225,9 @@ Base.eltype(::Type{<:GridIterators{C}}) where C = C
 Base.length(iterator::GridIterators) = length(_getset(iterator))
 
 function _check_same_celltype(grid::AbstractGrid, faceset::Set{FaceIndex})
-    celltype = typeof(grid.cells[first(first(cellset))])
+    celltype = typeof(grid.cells[first(first(faceset))])
     if !all(typeof(grid.cells[first(face)]) == celltype for face in faceset)
-        error("The cells in the cellset are not all of the same celltype.")
+        error("The cells in the faceset are not all of the same celltype.")
     end
 end
 

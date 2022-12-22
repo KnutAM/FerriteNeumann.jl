@@ -105,7 +105,7 @@ function Ferrite.add!(nh::NeumannHandler{<:MixedDofHandler}, nbc::Neumann)
     contribution = false
     for fh in nh.dh.fieldhandlers
         faceset = intersect_with_cellset(nbc.faceset, fh.cellset)
-        if length(faceset)>0
+        if length(faceset)>0 && nbc.fieldname in Ferrite.getfieldnames(fh)
             contribution = true
             push!(nh.nbcs, NeumannData(fh, nbc, faceset))
         end
@@ -117,7 +117,7 @@ function Ferrite.apply!(f::Vector, nh::NeumannHandler, time)
     foreach(nbc->apply!(f,nbc,nh.dh,time), nh.nbcs)
 end
 
-function Ferrite.apply!(f::Vector{T}, nbc::NeumannData, dh::DofHandler, time) where T
+function Ferrite.apply!(f::Vector{T}, nbc::NeumannData, dh, time) where T
     dofs = collect(nbc.dofrange)
     fe = zeros(T, length(dofs))
     for face in FaceIterator(dh, nbc.faceset)
