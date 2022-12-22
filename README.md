@@ -68,7 +68,6 @@ are compatible with the given `FaceValues` or `QuadratureRule`. This may be an i
 using the `MixedDofHandler`. 
 
 </details>  
-&nbsp;  
 
 ### Application
 During the time stepping, the current forces can be added to the force vector with 
