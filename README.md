@@ -4,21 +4,27 @@
 [![Build Status](https://github.com/KnutAM/FerriteNeumann.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/KnutAM/FerriteNeumann.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/KnutAM/FerriteNeumann.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/KnutAM/FerriteNeumann.jl)
 
-Simplified application of Neumann boundary conditions for [Ferrite.jl](https://github.com/Ferrite-FEM/Ferrite.jl/), 
-where the Neumann BCs are of the type
+Simplified application of external loads, such as Neumann boundary conditions and body loads for [Ferrite.jl](https://github.com/Ferrite-FEM/Ferrite.jl/).
+Supports both `DofHandler` and `MixedDofHandler`, 
+and can automatically infer suitable `FaceValues`/`CellValues` 
+for a given the quadrature order. 
+It is also possible to specify `FaceValues`/`CellValues` manually. 
+
+### Neumann BCs
 
 - Scalar field: $\int_{\Gamma} f \ \delta u \ \mathrm{d}\Gamma$
 - Vector field: $\int_{\Gamma} \boldsymbol{f} \cdot \boldsymbol{\delta u} \ \mathrm{d}\Gamma$
 
-Works conveniently for both `DofHandler` and `MixedDofHandler` and can automatically create the 
-suitable `FaceValues` when given the quadrature order. It is also possible to specify `FaceValues`
-manually. 
+### Body load
 
-## Example
+- Scalar field: $\int_{\Omega} f \ \delta u \ \mathrm{d}\Omega$
+- Vector field: $\int_{\Omega} \boldsymbol{f} \cdot \boldsymbol{\delta u} \ \mathrm{d}\Omega$
+
+
+## Setting up Neumann BC
 Let's consider the case of a coupled problem with one 
 scalar, `:c`, and one vector, `:u`, field. 
 
-### Definition
 We start by defining how the Neumann boundary conditions should vary with 
 position (within the given face set), time, and normal vector. 
 Let's say we want to apply a pressure as a function of height (`x[3]`) on 
@@ -68,6 +74,43 @@ are compatible with the given `FaceValues` or `QuadratureRule`. This may be an i
 using the `MixedDofHandler`. 
 
 </details>  
+
+## Setting up body loads
+Let's again consider the case of a coupled problem with one 
+scalar, `:c`, and one vector, `:u`, field.
+
+*While only body loads are considered in this example,* 
+*the intended usage is to combine NeumannBCs and body loads* 
+*in the same `NeumannHandler`.*
+
+We start by defining how the body loads should vary with 
+position (within the given cell set) and time.
+Let's say we want to apply centrifugal body/volume force with a ramping rotational speed `ω(t)=kt` around the origin, i.e. `𝐛=ρω|r|𝐫` on 
+the displacement field, `:u`. 
+On the concentration field, `:c`, we add a constant source term 
+for all cells in the cellset `"supply"`. 
+```julia
+k = 1               # 1/s²
+x0 = zero(Vec{3})   
+f_u(x::Vec, time) = (r=x-x0; ρ*k*time*norm(r)*r) # ::Vec
+f_c(x::Vec, time) = 1.0    # kg/m³ (::Number)
+```
+
+With the time and spatial variations defined, we can setup the actual 
+loading types,
+```julia
+nh = NeumannHandler(dh::DofHandler)      # Container for Neumann BCs and body loads
+faceset = getfaceset(grid, "right")      # 
+add!(nh, BodyLoad(:c, 2, getfaceset(grid, "supply"), f_c))   # Use 2nd order default quadrature integration
+add!(nh, BodyLoad(:u, 2, f_u))   # Use 2nd order default quadrature integration and the entire domain (since no cellset is given)
+```
+In this case, the choice of `CellScalarValues` or `CellVectorValues` 
+is made based on the return type of `f_c` and `f_u` in each case. 
+The reference shape, function interpolation and 
+default geometry interpolation is taken from the `dh`. 
+The same code can be used for `DofHandler` and `MixedDofHandler`. 
+In the same way as for `Neumann`, `CellValues` or `QuadratureRule`can 
+be specified manually, with the same requirements regarding mixed grids. 
 
 ### Application
 During the time stepping, the current forces can be added to the force vector with 

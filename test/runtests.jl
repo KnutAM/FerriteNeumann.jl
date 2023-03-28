@@ -34,7 +34,7 @@ end
     # Setup of test mesh
     Nx = 5; Ny = 5
     grid=generate_grid(Quadrilateral, (Nx, Ny));
-    dh=DofHandler(grid); push!(dh, :u, 2); close!(dh);
+    dh=DofHandler(grid); add!(dh, :u, 2); close!(dh);
 
     # Create Neumann boundary condition
     nh = NeumannHandler(dh)
@@ -72,7 +72,7 @@ end
     Nx, Ny, Nz = (2,2,2)
     grid=generate_grid(Tetrahedron, (Nx, Ny, Nz));
     dh=DofHandler(grid); 
-    push!(dh, :u, 3); push!(dh, :p, 1); close!(dh);
+    add!(dh, :u, 3); add!(dh, :p, 1); close!(dh);
     fset = grid.facesets["right"]
 
     # Create Neumann boundary condition
@@ -150,8 +150,8 @@ end
         dh=MixedDofHandler(grid);
         addcellset!(grid, "leftpart",  x -> x[1] <= eps(); all=false)
         addcellset!(grid, "rightpart", x -> x[1] >= eps(); all=true)
-        push!(dh, FieldHandler([Field(:v, Lagrange{2,RefCube,1}(), 2)], getcellset(grid, "leftpart")))
-        push!(dh, FieldHandler([Field(:u, Lagrange{2,RefCube,1}(), 2)], getcellset(grid, "rightpart")))
+        add!(dh, FieldHandler([Field(:v, Lagrange{2,RefCube,1}(), 2)], getcellset(grid, "leftpart")))
+        add!(dh, FieldHandler([Field(:u, Lagrange{2,RefCube,1}(), 2)], getcellset(grid, "rightpart")))
         close!(dh)
         nh = NeumannHandler(dh)
         @test_logs min_level=Logging.Warn add!(nh, Neumann(:u, 2, getfaceset(grid, "right"), f_2d)) # no warning should be issued
@@ -174,4 +174,27 @@ end
 
         # Check that it warns because :u is not available on the left face
         @test_logs (:warn,) add!(nh, Neumann(:u, 2, getfaceset(grid, "left"), f_2d))
+end
+
+@testset "VolumeCalculation" begin
+    lx, ly, lz = rand(3) .+ 1
+    grid = generate_grid(Hexahedron, (3,4,5), zero(Vec{3}), Vec((lx, ly, lz)))
+    dh = DofHandler(grid); add!(dh, :v, 1); add!(dh, :dummy, 3); close!(dh)
+    nh = NeumannHandler(dh)
+    add!(nh, BodyLoad(:v, 1, Returns(1.0)))
+    f = zeros(ndofs(dh))
+    apply!(f, nh, 1.0)
+    @test sum(f) ≈ lx*ly*lz
+    
+    dh = MixedDofHandler(grid);
+    addcellset!(grid, "leftpart",  x -> x[1] <= eps(); all=false)
+    addcellset!(grid, "rightpart", setdiff(Set(1:getncells(grid)), getcellset(grid, "leftpart")))
+    add!(dh, FieldHandler([Field(:v, Lagrange{3,RefCube,1}(), 1), Field(:dummy, Lagrange{3,RefCube,1}(), 3)], getcellset(grid, "leftpart")))
+    add!(dh, FieldHandler([Field(:v, Lagrange{3,RefCube,1}(), 1)], getcellset(grid, "rightpart")))
+    close!(dh)
+    nh = NeumannHandler(dh)
+    add!(nh, BodyLoad(:v, 1, Returns(1.0)))
+    f = zeros(ndofs(dh))
+    apply!(f, nh, 1.0)
+    @test sum(f) ≈ lx*ly*lz
 end

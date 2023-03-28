@@ -1,13 +1,14 @@
 name = "FerriteNeumann"
 uuid = "f0450e97-3c57-4e4a-8020-cfce828c3bbe"
 authors = ["Knut Andreas Meyer and contributors"]
-version = "0.1.1"
+version = "0.2.0"
 
 [deps]
 Ferrite = "c061ca5d-56c9-439f-9c0e-210fe06d3992"
 
 [compat]
-julia = "1.6"
+julia = "1.7"
+Ferrite = "0.3.13"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
