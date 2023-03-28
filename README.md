@@ -85,15 +85,15 @@ scalar, `:c`, and one vector, `:u`, field.
 
 We start by defining how the body loads should vary with 
 position (within the given cell set) and time.
-Let's say we want to apply centrifugal body/volume force with a ramping rotational speed `ω(t)=kt` around the origin, i.e. `𝐛=ρω|r|𝐫` on 
+Let's say we want to apply centrifugal body/volume force with a ramping rotational speed $\omega(t)=kt$ around the origin, i.e. $\boldsymbol{f}=\rho\omega^2\boldsymbol{r}$ on 
 the displacement field, `:u`. 
 On the concentration field, `:c`, we add a constant source term 
 for all cells in the cellset `"supply"`. 
 ```julia
 k = 1               # 1/s²
 x0 = zero(Vec{3})   
-f_u(x::Vec, time) = (r=x-x0; ρ*k*time*norm(r)*r) # ::Vec
-f_c(x::Vec, time) = 1.0    # kg/m³ (::Number)
+f_u(x::Vec, time) = (r=x-x0; ω=k*t; (ρ*ω^2)*r) # ::Vec
+f_c(x::Vec, time) = 1.0    # kg/(m³s) (::Number)
 ```
 
 With the time and spatial variations defined, we can setup the actual 
@@ -118,7 +118,5 @@ During the time stepping, the current forces can be added to the force vector wi
 ```julia
 apply!(f::Vector, nh, time)
 ```
-noting that the full force is added (not only the increment), so this statement 
-is usually prepended by `fill!(f, 0)`. However, this action can also be done before 
-the element assembly if it includes `f`, nothing that it must be done after 
-`start_assemble` as that zeros `f`.  
+In each time step, `f` must be zeroed, either via `fill!(f, 0)` or with `Ferrite.start_assemble` if `f` is included in the assembler.
+
