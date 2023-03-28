@@ -100,8 +100,7 @@ With the time and spatial variations defined, we can setup the actual
 loading types,
 ```julia
 nh = NeumannHandler(dh::DofHandler)      # Container for Neumann BCs and body loads
-faceset = getfaceset(grid, "right")      # 
-add!(nh, BodyLoad(:c, 2, getfaceset(grid, "supply"), f_c))   # Use 2nd order default quadrature integration
+add!(nh, BodyLoad(:c, 2, getcellset(grid, "supply"), f_c))   # Use 2nd order default quadrature integration
 add!(nh, BodyLoad(:u, 2, f_u))   # Use 2nd order default quadrature integration and the entire domain (since no cellset is given)
 ```
 In this case, the choice of `CellScalarValues` or `CellVectorValues` 
