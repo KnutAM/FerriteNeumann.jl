@@ -48,9 +48,9 @@ for op = (:getnodes, :getcoordinates, :cellid, :celldofs)
     end)
 end
 @inline faceid(fc::FaceCache) = fc.current_faceid[]
-@inline celldofs!(v::Vector, fc::FaceCache) = celldofs!(v, fc.cc)
-@inline onboundary(fc::FaceCache) = onboundary(fc.cc, faceid(fc))
-@inline faceindex(fc::FaceCache) = FaceIndex(cellid(fc), faceid(fc))
+#@inline celldofs!(v::Vector, fc::FaceCache) = celldofs!(v, fc.cc)
+#@inline onboundary(fc::FaceCache) = onboundary(fc.cc, faceid(fc))
+#@inline faceindex(fc::FaceCache) = FaceIndex(cellid(fc), faceid(fc))
 @inline function reinit!(fv::FaceValues, fc::FaceCache)
     reinit!(fv, fc.cc, faceid(fc))
 end
