@@ -1,12 +1,12 @@
 name: FerriteMasterCI
 on:
   schedule:
-  - cron: '*/2 * * * 2' # 04:00 UTC every monday
-  #push:
-  #  branches:
-  #    - main
-  #  tags: '*'
-  #pull_request:
+  - cron: '0 4 * * 2' # 04:00 UTC every monday
+  push:
+    branches:
+      - main
+    tags: '*'
+  pull_request:
 concurrency:
   # Skip intermediate builds: always.
   # Cancel intermediate builds: only if it is a pull request build.
