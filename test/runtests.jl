@@ -200,7 +200,7 @@ end
     @test sum(f) ≈ volume
 
     nh = NeumannHandler(dh)
-    add!(nh, BodyLoad(:u, 2, Returns(Vec((0.0, 1.0, 0.0)))))
+    add!(nh, BodyLoad(:u, 2, getcellset(grid, "leftpart"), Returns(Vec((0.0, 1.0, 0.0)))))
     add!(nh, BodyLoad(:v, CellScalarValues(QuadratureRule{3,RefCube}(1), Lagrange{3,RefCube,1}()), (x,t)->t>2 ? 1.0 : 0.0))
     fill!(f, 0)
     apply!(f, nh, 1.0)
