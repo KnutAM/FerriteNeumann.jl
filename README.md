@@ -92,7 +92,7 @@ for all cells in the cellset `"supply"`.
 ```julia
 k = 1               # 1/s²
 x0 = zero(Vec{3})   
-f_u(x::Vec, time) = (r=x-x0; ω=k*t; (ρ*ω^2)*r) # ::Vec
+f_u(x::Vec, time) = (r=x-x0; ω=k*time; (ρ*ω^2)*r) # ::Vec
 f_c(x::Vec, time) = 1.0    # kg/(m³s) (::Number)
 ```
 
