@@ -117,5 +117,4 @@ During the time stepping, the current forces can be added to the force vector wi
 ```julia
 apply!(f::Vector, nh, time)
 ```
-In each time step, `f` must be zeroed, either via `fill!(f, 0)` or with `Ferrite.start_assemble` if `f` is included in the assembler.
-
+in each time step. Before this, `f` must be zeroed; either via `fill!(f, 0)` or with `Ferrite.start_assemble` if `f` is included in the assembler.
