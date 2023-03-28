@@ -178,23 +178,36 @@ end
 
 @testset "VolumeCalculation" begin
     lx, ly, lz = rand(3) .+ 1
-    grid = generate_grid(Hexahedron, (3,4,5), zero(Vec{3}), Vec((lx, ly, lz)))
-    dh = DofHandler(grid); add!(dh, :v, 1); add!(dh, :dummy, 3); close!(dh)
+    volume = lx*ly*lz
+    grid = generate_grid(Hexahedron, (4,3,5), zero(Vec{3}), Vec((lx, ly, lz)))
+    dh = DofHandler(grid); add!(dh, :v, 1); add!(dh, :u, 3); close!(dh)
     nh = NeumannHandler(dh)
     add!(nh, BodyLoad(:v, 1, Returns(1.0)))
     f = zeros(ndofs(dh))
     apply!(f, nh, 1.0)
-    @test sum(f) ≈ lx*ly*lz
+    @test sum(f) ≈ volume
     
     dh = MixedDofHandler(grid);
-    addcellset!(grid, "leftpart",  x -> x[1] <= eps(); all=false)
+    addcellset!(grid, "leftpart",  x -> x[1] <= 0.5+eps(); all=true)
     addcellset!(grid, "rightpart", setdiff(Set(1:getncells(grid)), getcellset(grid, "leftpart")))
-    add!(dh, FieldHandler([Field(:v, Lagrange{3,RefCube,1}(), 1), Field(:dummy, Lagrange{3,RefCube,1}(), 3)], getcellset(grid, "leftpart")))
+    add!(dh, FieldHandler([Field(:v, Lagrange{3,RefCube,1}(), 1), Field(:u, Lagrange{3,RefCube,1}(), 3)], getcellset(grid, "leftpart")))
     add!(dh, FieldHandler([Field(:v, Lagrange{3,RefCube,1}(), 1)], getcellset(grid, "rightpart")))
     close!(dh)
     nh = NeumannHandler(dh)
     add!(nh, BodyLoad(:v, 1, Returns(1.0)))
     f = zeros(ndofs(dh))
     apply!(f, nh, 1.0)
-    @test sum(f) ≈ lx*ly*lz
+    @test sum(f) ≈ volume
+
+    nh = NeumannHandler(dh)
+    add!(nh, BodyLoad(:u, 2, Returns(Vec((0.0, 1.0, 0.0)))))
+    add!(nh, BodyLoad(:v, CellScalarValues(QuadratureRule{3,RefCube}(1), Lagrange{3,RefCube,1}()), (x,t)->t>2 ? 1.0 : 0.0))
+    fill!(f, 0)
+    apply!(f, nh, 1.0)
+    # Relative volume where :u lives
+    r_u = length(getcellset(grid, "leftpart"))/sum(length.(getcellset.((grid,), ("leftpart","rightpart")))) # This test requires equally large segments
+    @test sum(f) ≈ r_u*volume
+    fill!(f, 0)
+    apply!(f, nh, 3.0)
+    @test sum(f) ≈ (1+r_u)*volume
 end

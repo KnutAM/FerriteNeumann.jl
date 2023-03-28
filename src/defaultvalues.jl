@@ -36,9 +36,11 @@ function get_facevalues(qr::QuadratureRule{<:Any,RefShape}, ip::Interpolation{<:
                         ip_geo::Interpolation{<:Any,RefShape}, ::Number) where RefShape
     return FaceScalarValues(qr, ip, ip_geo)
 end
+#= Not required, will throw assertion error upon FaceValues construction (but keep if later decided a nicer error is good)
 function get_facevalues(qr::QuadratureRule, ip::Interpolation, ip_geo::Interpolation, fval::Union{Vec,Number})
     throw(ArgumentError("qr, $(typeof(qr)), ip, $(typeof(ip)), and ip_geo, $(typeof(ip_geo)), doesn't seem compatible. (info: fval=$fval)"))
 end
+=#
 
 """
     get_cellvalues(fv::CellValues, args...)
@@ -76,6 +78,8 @@ function get_cellvalues(qr::QuadratureRule{dim,RefShape}, ip::Interpolation{dim,
                         ip_geo::Interpolation{dim,RefShape}, ::Number) where {dim, RefShape}
     return CellScalarValues(qr, ip, ip_geo)
 end
+#= Not required, will throw assertion error upon CellValues construction (but keep if later decided a nicer error is good)
 function get_cellvalues(qr::QuadratureRule, ip::Interpolation, ip_geo::Interpolation, fval::Union{Vec,Number})
     throw(ArgumentError("qr, $(typeof(qr)), ip, $(typeof(ip)), and ip_geo, $(typeof(ip_geo)), doesn't seem compatible. (info: fval=$fval)"))
 end
+=#
