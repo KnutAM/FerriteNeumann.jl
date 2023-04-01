@@ -20,8 +20,21 @@ It is also possible to specify `FaceValues`/`CellValues` manually.
 - Scalar field: $\int_{\Omega} f \ \delta u \ \mathrm{d}\Omega$
 - Vector field: $\int_{\Omega} \boldsymbol{f} \cdot \boldsymbol{\delta u} \ \mathrm{d}\Omega$
 
+### Workflow:
 
-## Setting up Neumann BC
+1. Create handler: `nh = NeumannHandler(dh)`
+2. Add boundary and volume contributions
+   - `add!(nh, Neumann(:u, 2, getfaceset(dh.grid, "right"), (x,t,n)-> (1-exp(-t))*n))` (2 => 2nd order quadrature)
+   - `add!(nh, Neumann(:c, 3, getfaceset(dh.grid, "left"), (x,t,n)-> norm(x))`
+   - `add!(nh, BodyLoad(:c, 1, (x,t)->1.0))`
+3. Apply loading during simulation to vector `f`: `apply!(f, nh, t)`
+
+*Inspired by `Ferrite.ConstraintHandler`*
+
+
+## Detailed documentation
+*TODO: Move to docs*
+### Setting up Neumann BC
 Let's consider the case of a coupled problem with one 
 scalar, `:c`, and one vector, `:u`, field. 
 
@@ -75,7 +88,7 @@ using the `MixedDofHandler`.
 
 </details>  
 
-## Setting up body loads
+### Setting up body loads
 Let's again consider the case of a coupled problem with one 
 scalar, `:c`, and one vector, `:u`, field.
 
