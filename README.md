@@ -4,6 +4,10 @@
 [![Build Status](https://github.com/KnutAM/FerriteNeumann.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/KnutAM/FerriteNeumann.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/KnutAM/FerriteNeumann.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/KnutAM/FerriteNeumann.jl)
 
+> [!WARNING]
+> This package is discontinued, the functionality has moved to [FerriteAssembly.jl](https://github.com/KnutAM/FerriteAssembly.jl), 
+> specifically the [`LoadHandler`](https://knutam.github.io/FerriteAssembly.jl/dev/Convenience/LoadHandler/)
+
 Simplified application of external loads, such as Neumann boundary conditions and body loads for [Ferrite.jl](https://github.com/Ferrite-FEM/Ferrite.jl/).
 Supports both `DofHandler` and `MixedDofHandler`, 
 and can automatically infer suitable `FaceValues`/`CellValues` 
